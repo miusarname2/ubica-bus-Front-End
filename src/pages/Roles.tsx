@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,30 +7,40 @@ import { Plus, Search } from "lucide-react";
 import { DataTable } from "@/components/shared/DataTable";
 
 const Roles = () => {
-  // This would typically come from an API
-  const roles = [
-    {
-      id: "1",
-      name: "Administrator",
-      description: "Full access to all system features",
-      users: 3,
-      permissions: "All",
-    },
-    {
-      id: "2",
-      name: "Manager",
-      description: "Access to management features, no system configuration",
-      users: 5,
-      permissions: "Create, Read, Update",
-    },
-    {
-      id: "3",
-      name: "Driver",
-      description: "Access to assigned routes and basic information",
-      users: 12,
-      permissions: "Read",
-    },
-  ];
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch("/api/roles");
+        const data = await res.json();
+
+        // Mapear la respuesta al formato esperado por la tabla
+        const rolesFormatted = data.map((role: any) => ({
+          id: role.ID,
+          name: role.Nombre,
+          description: role.Descripcion || "No description",
+          // Puedes agregar users y permissions si tienes esa info, o dejar vacíos
+          users: "-", 
+          permissions: "-", 
+        }));
+
+        setRoles(rolesFormatted);
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
+
+  const filteredRoles = roles.filter((role) =>
+    role.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const columns = [
     { header: "Role Name", accessorKey: "name" },
@@ -68,18 +77,21 @@ const Roles = () => {
           <div className="flex items-center gap-2 mt-4">
             <div className="relative max-w-sm w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search roles..." 
-                className="pl-8" 
+              <Input
+                placeholder="Search roles..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable 
-            columns={columns} 
-            data={roles} 
-          />
+          {loading ? (
+            <p>Loading roles...</p>
+          ) : (
+            <DataTable columns={columns} data={filteredRoles} />
+          )}
         </CardContent>
       </Card>
     </DashboardLayout>

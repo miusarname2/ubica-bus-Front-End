@@ -1,51 +1,74 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
-import { DataTable } from "@/components/shared/DataTable";
+import { DataTable } from "@/components/shared/DataTable"; // Ensure this path is correct
+import axios from "axios";
+
+// Define an interface for your Route data for better type safety
+interface RouteData {
+  ID: string;
+  Nombre: string;
+  Descripcion: string;
+  Origen: { Lat: number; Lng: number; };
+  Destino: { Lat: number; Lng: number; };
+  ModoTransporte: string;
+  Waypoints: Array<{ Lat: number; Lng: number; Descripcion: string; }>;
+}
 
 const Routes = () => {
-  // This would typically come from an API
-  const routes = [
-    {
-      id: "1",
-      name: "Downtown Express",
-      startLocation: "Central Station",
-      endLocation: "Business District",
-      stops: 5,
-      status: "Active",
-    },
-    {
-      id: "2",
-      name: "Airport Shuttle",
-      startLocation: "City Center",
-      endLocation: "International Airport",
-      stops: 3,
-      status: "Active",
-    },
-    {
-      id: "3",
-      name: "University Line",
-      startLocation: "Main Campus",
-      endLocation: "Student Housing",
-      stops: 8,
-      status: "Inactive",
-    },
-  ];
+  const [routes, setRoutes] = useState<RouteData[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    axios.get("/api/routes")
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setRoutes(res.data);
+        } else {
+          console.error("API response is not an array:", res.data);
+          setRoutes([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching routes:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const columns = [
-    { header: "Name", accessorKey: "name" },
-    { header: "Start Location", accessorKey: "startLocation" },
-    { header: "End Location", accessorKey: "endLocation" },
-    { header: "Stops", accessorKey: "stops" },
-    { header: "Status", accessorKey: "status" },
+    { header: "Nombre", accessorKey: "Nombre" },
+    { header: "Descripción", accessorKey: "Descripcion" },
     {
-      id: "actions",
+      header: "Origen",
+      // Using accessorFn to format the Lat and Lng from the Origen object
+      accessorFn: (row: RouteData) => {
+        // Safely check if Origen and its properties exist before accessing
+        if (row.Origen?.Lat != null && row.Origen?.Lng != null) {
+            return `Lat: ${row.Origen.Lat}, Lng: ${row.Origen.Lng}`;
+        }
+        return "N/A"; // Fallback if data is missing
+      },
+    },
+    {
+      header: "Destino",
+      // Using accessorFn to format the Lat and Lng from the Destino object
+      accessorFn: (row: RouteData) => {
+        // Safely check if Destino and its properties exist before accessing
+        if (row.Destino?.Lat != null && row.Destino?.Lng != null) {
+            return `Lat: ${row.Destino.Lat}, Lng: ${row.Destino.Lng}`;
+        }
+        return "N/A"; // Fallback if data is missing
+      },
+    },
+    { header: "Modo de Transporte", accessorKey: "ModoTransporte" },
+    {
+      id: "actions", // Use a unique ID for action columns
       header: "Actions",
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: any }) => ( // 'any' for row is fine here if you're not deeply typing actions yet
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">View</Button>
           <Button variant="outline" size="sm">Edit</Button>
@@ -72,18 +95,24 @@ const Routes = () => {
           <div className="flex items-center gap-2 mt-4">
             <div className="relative max-w-sm w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search routes..." 
+              <Input
+                placeholder="Search routes..."
                 className="pl-8"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable 
-            columns={columns} 
-            data={routes} 
-          />
+          {loading ? (
+            <p>Loading routes...</p>
+          ) : routes.length === 0 ? (
+            <p>No routes found. Please add new routes or check your API connection.</p>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={routes}
+            />
+          )}
         </CardContent>
       </Card>
     </DashboardLayout>
