@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,48 +7,65 @@ import { Plus, Search } from "lucide-react";
 import { DataTable } from "@/components/shared/DataTable";
 
 const Buses = () => {
-  // This would typically come from an API
-  const buses = [
-    {
-      id: "1",
-      regNumber: "ABC-1234",
-      model: "Mercedes Sprinter",
-      capacity: 16,
-      driver: "John Smith",
-      status: "In Service",
-    },
-    {
-      id: "2",
-      regNumber: "XYZ-5678",
-      model: "Volvo 9700",
-      capacity: 52,
-      driver: "Sarah Johnson",
-      status: "In Service",
-    },
-    {
-      id: "3",
-      regNumber: "DEF-9012",
-      model: "Ford Transit",
-      capacity: 12,
-      driver: "Unassigned",
-      status: "Maintenance",
-    },
-  ];
+  const [buses, setBuses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchBuses = async () => {
+      try {
+        const res = await fetch("/api/buses");
+        const data = await res.json();
+
+        // Formatear fechas
+        const busesFormatted = data.map((bus: any) => ({
+          ...bus,
+          FechaInicioFormatted: bus.FechaInicio
+            ? new Date(bus.FechaInicio).toLocaleString()
+            : "N/A",
+          FechaFinFormatted: bus.FechaFin
+            ? new Date(bus.FechaFin).toLocaleString()
+            : "N/A",
+        }));
+
+        setBuses(busesFormatted);
+      } catch (error) {
+        console.error("Error fetching buses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBuses();
+  }, []);
+
+  // Filtrado simple por placa o conductorID
+  const filteredBuses = buses.filter(
+    (bus) =>
+      bus.Placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (bus.ConductorID && bus.ConductorID.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const columns = [
-    { header: "Reg Number", accessorKey: "regNumber" },
-    { header: "Model", accessorKey: "model" },
-    { header: "Capacity", accessorKey: "capacity" },
-    { header: "Driver", accessorKey: "driver" },
-    { header: "Status", accessorKey: "status" },
+    { header: "Placa", accessorKey: "Placa" },
+    { header: "Conductor ID", accessorKey: "ConductorID" },
+    { header: "Ruta ID", accessorKey: "RutaID" },
+    { header: "Fecha Inicio", accessorKey: "FechaInicioFormatted" },
+    { header: "Fecha Fin", accessorKey: "FechaFinFormatted" },
     {
       id: "actions",
-      header: "Actions",
+      header: "Acciones",
       cell: ({ row }: any) => (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">View</Button>
-          <Button variant="outline" size="sm">Edit</Button>
-          <Button variant="outline" size="sm" className="text-destructive">Delete</Button>
+          <Button variant="outline" size="sm">
+            Ver
+          </Button>
+          <Button variant="outline" size="sm">
+            Editar
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive">
+            Eliminar
+          </Button>
         </div>
       ),
     },
@@ -72,18 +88,21 @@ const Buses = () => {
           <div className="flex items-center gap-2 mt-4">
             <div className="relative max-w-sm w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search buses..." 
+              <Input
+                placeholder="Search buses..."
                 className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable 
-            columns={columns} 
-            data={buses} 
-          />
+          {loading ? (
+            <p>Cargando buses...</p>
+          ) : (
+            <DataTable columns={columns} data={filteredBuses} />
+          )}
         </CardContent>
       </Card>
     </DashboardLayout>
@@ -91,3 +110,4 @@ const Buses = () => {
 };
 
 export default Buses;
+
