@@ -14,7 +14,7 @@ const Roles = () => {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch("/api/roles");
+        const res = await fetch("https://swift-brena-example1-7edebccb.koyeb.app/roles");
         const data = await res.json();
 
         // Mapear la respuesta al formato esperado por la tabla

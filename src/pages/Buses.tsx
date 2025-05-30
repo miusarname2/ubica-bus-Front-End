@@ -14,7 +14,7 @@ const Buses = () => {
   useEffect(() => {
     const fetchBuses = async () => {
       try {
-        const res = await fetch("/api/buses");
+        const res = await fetch("https://swift-brena-example1-7edebccb.koyeb.app/buses");
         const data = await res.json();
 
         // Formatear fechas

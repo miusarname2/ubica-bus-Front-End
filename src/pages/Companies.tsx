@@ -18,7 +18,7 @@ const Companies = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/companies") 
+    fetch("https://swift-brena-example1-7edebccb.koyeb.app/companies") 
       .then((res) => res.json())
       .then((data) => {
         setCompanies(data);
